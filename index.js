@@ -1,6 +1,10 @@
 import { args, Option, Choice } from "https://deno.land/x/args@2.1.1/index.ts"
-import yaml from "https://dev.jspm.io/yaml@2.0.0-7"
+import yaml from "yaml"
 import npmSemanticRelease from "./workflows/npm-semantic-release/index.ts"
+import {
+  prettier,
+  prettierPlugins,
+} from "https://denolib.com/denolib/prettier/prettier.ts"
 import chalkInvalid from "https://deno.land/x/chalk_deno@v4.1.1-deno/source/index.js"
 
 console.log(prompts)
