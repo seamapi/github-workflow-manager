@@ -1,87 +1,130 @@
-import { args, Option, Choice } from "https://deno.land/x/args@2.1.1/index.ts"
-import yaml from "yaml"
-import npmSemanticRelease from "./workflows/npm-semantic-release/index.ts"
-import {
-  prettier,
-  prettierPlugins,
-} from "https://denolib.com/denolib/prettier/prettier.ts"
-import chalkInvalid from "https://deno.land/x/chalk_deno@v4.1.1-deno/source/index.js"
+const yargs = require("yargs/yargs")
+const { hideBin } = require("yargs/helpers")
+const chalk = require("chalk")
+const { readdirSync } = require("fs")
+const fs = require("fs/promises")
+const path = require("path")
+const yaml = require("yaml")
+const prompts = require("prompts")
+const findGitRoot = require("find-git-root")
 
-console.log(prompts)
-
-const chalk = chalkInvalid as any
-
-const workflows = {
-  "npm-semantic-release": npmSemanticRelease,
-  "npm-test": npmSemanticRelease,
-}
-
-let parser = Object.keys(workflows).reduce(
-  (agg, wf) => (agg as any).sub(wf, args.describe("")),
-  args
+const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
+  (agg, dirName) => ({
+    ...agg,
+    [dirName]: require(path.resolve(__dirname, "workflows", dirName)),
+  }),
+  {}
 )
 
 async function main() {
-  // TODO search parent directories for .git to know where .github/workflows is
-  const parsedArgs = parser.parse(Deno.args)
-  const workflowType = parsedArgs.tag
+  const yargsBuilder = yargs(hideBin(process.argv))
 
-  if (!(workflowType.toString() in workflows))
-    throw new Error(
-      `Unknown workflow type "${workflowType.toString()}"\n\nKnown workflow types:\n${Object.keys(
-        workflows
+  for (const wfName in workflows) {
+    if (!workflows[wfName].description)
+      throw new Error(
+        `Workflow Template "${wfName}" is missing the "description" export.`
       )
-        .map((w) => `\t${w}`)
-        .join("\n")}`
-    )
+    yargsBuilder.command(wfName, workflows[wfName].description)
+  }
 
-  const workflowsDir = `.github/workflows`
+  const argv = yargsBuilder.argv
+
+  if (argv._.length === 0) {
+    yargsBuilder.showHelp()
+    process.exit(1)
+  }
+
+  const workflowType = argv._[0]
+
+  if (!workflows[workflowType]) {
+    yargsBuilder.showHelp()
+    process.exit(1)
+  }
+
+  const userRepoRoot = path.resolve(findGitRoot(process.cwd()), "..")
+
+  const userWorkflowFileNames = await fs.readdir(
+    path.resolve(userRepoRoot, ".github", "workflows")
+  )
+
   const matchingWorkflows = []
 
-  for await (const workflowFile of Deno.readDir(workflowsDir)) {
-    if (!workflowFile.isFile || !workflowFile.name.endsWith(".yml")) continue
-    const textDecoder = new TextDecoder("utf-8")
-    const fileContent = textDecoder.decode(
-      await Deno.readFile(workflowsDir + "/" + workflowFile.name)
-    )
-    const m = fileContent.match(/#[ ]*gwm:[ ]*({.*)$/m)!
+  for (const userWorkflowFileName of userWorkflowFileNames) {
+    if (!userWorkflowFileName.endsWith(".yml")) continue
+    const fileContent = (
+      await fs.readFile(
+        path.resolve(userRepoRoot, ".github", "workflows", userWorkflowFileName)
+      )
+    ).toString()
+    const m = fileContent.match(/#[ ]*gwm:[ ]*({.*)$/m)
+    console.log(fileContent, m)
     if (m === null || m === undefined) continue
     const gwmConfig = JSON.parse(m[1])
     if (gwmConfig.type !== workflowType) continue
 
     const content = yaml.parse(fileContent)
-    matchingWorkflows.push({ gwmConfig, content, fileName: workflowFile.name })
+    matchingWorkflows.push({
+      gwmConfig,
+      content,
+      fileName: userWorkflowFileName,
+    })
     // TODO store comments to allow comment reconciliation later
-
-    // console.log(content)
-    // console.log(yaml.stringify(content)
   }
 
-  if (matchingWorkflows.length === 0) {
-    console.log("Creating new worflow...")
+  let { selectedWorkflowName } = await prompts([
+    {
+      type: "select",
+      name: "selectedWorkflowName",
+      message: "Select Workflow to Overwrite:",
+      choices: [
+        ...(await matchingWorkflows.map((mf) => ({
+          title: mf.fileName.split(".")[0],
+          value: mf.fileName.split(".")[0],
+        }))),
+        { title: "Create New", value: "create_new" },
+      ],
+    },
+  ])
+
+  if (selectedWorkflowName === "create_new") {
+    ;({ selectedWorkflowName } = await prompts([
+      {
+        type: "text",
+        name: "selectedWorkflowName",
+        message: "Name your workflow file",
+        initial: workflows[workflowType].defaultFileName || workflowType,
+      },
+    ]))
   }
 
-  let workflowToEdit
-  if (matchingWorkflows.length >= 1) {
-    workflowToEdit = matchingWorkflows[0]
-    // TODO use prompts to allow selection of this workflow or "create new" when
-    // deno has a prompts with choices
-  } else if (matchingWorkflows.length > 2) {
-    // TODO use prompts to allow selection when deno has a prompts with choices
-  }
+  if (!selectedWorkflowName) throw new Error("No workflow selected")
 
-  if (!workflowToEdit) {
-    console.log(`No workflow found, creating workflow for "${workflowType}"`)
-  } else {
-    console.log(`Editing "${workflowType}"`)
-  }
+  const createdWorkflow = await workflows[
+    workflowType
+  ].createWorkflowInteractive(argv)
 
-  // await Prompt.prompts([
-  //   { message: "Prompt Text", type: "text", name: "prompt_text" },
-  // ])
-  // console.log(await fs.listDir(workflowsDir))
+  const outputPath = path.resolve(
+    userRepoRoot,
+    ".github",
+    "workflows",
+    `${selectedWorkflowName}.yml`
+  )
+  console.log(`Writing to "${outputPath.replace(userRepoRoot + "/", "")}"`)
+  await fs.writeFile(
+    outputPath,
+    `# GENERATED BY github-workflow-manager\n# gwm: ${JSON.stringify({
+      type: workflowType,
+    })}\n
+    ${
+      typeof createdWorkflow === "string"
+        ? createdWorkflow
+        : yaml.stringify(createdWorkflow)
+    }`
+  )
 }
 
-main().catch((e) => {
-  console.log(chalk.red(`\n${e.toString()}\n\n${e.stack}\n`))
-})
+if (!module.parent) {
+  main().catch((e) => {
+    console.log(chalk.red(e.toString() + "\n\n" + e.stack))
+  })
+}
