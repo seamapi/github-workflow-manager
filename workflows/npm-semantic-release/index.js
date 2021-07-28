@@ -30,8 +30,6 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     },
   ], { onCancel: () => { throw new Error("Cancelled by user") }})
 
-  console.log({ buildCommand, releaseBranch })
-
   if (!releaseRCExists) {
     console.log("Installing dependencies...")
     const deps = ["@semantic-release/commit-analyzer", "@semantic-release/release-notes-generator", "@semantic-release/npm", "@semantic-release/github", "@semantic-release/git"]
@@ -81,10 +79,9 @@ jobs:
         with:
           node-version: 14
       - name: Install dependencies
-        run: npm install
-${
+        run: npm install${
   buildCommand !== "none"
-    ? `      - name: Build NPM package
+    ? `\n      - name: Build NPM package
         run: npm run ${buildCommand}`
     : ""
 }
@@ -92,13 +89,7 @@ ${
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
-      - name: Publish github pages
-        run: |
-          git remote set-url origin https://git:\${GITHUB_TOKEN}@github.com/UniversalDataTool/universal-data-tool.git
-          npm run gh-pages -- -u "github-actions-bot <support+actions@github.com>"
-        env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}`,
+        run: npx semantic-release`
   }
 }
 
