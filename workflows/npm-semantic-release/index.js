@@ -1,6 +1,7 @@
 const path = require("path")
 const prompts = require("prompts")
 const fs = require("fs/promises")
+const runShell = require("../../lib/runShell")
 
 async function createWorkflowInteractive({ userRepoDir, config }) {
   const packageJson = JSON.parse(
@@ -10,17 +11,50 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
   const releaseRCExists = Boolean(
     await fs.stat(path.join(userRepoDir, ".releaserc.js")).catch((e) => null)
   )
+  const yarnLockExists = Boolean(
+    await fs.stat(path.join(userRepoDir, "yarn.lock"))
+  )
 
-  const { buildCommand } = await prompts([
+  const { buildCommand, releaseBranch } = await prompts([
+    {
+      type: "text",
+      name: "releaseBranch",
+      message: "Main Release Branch:",
+      initial: "main"
+    },
     {
       type: "text",
       name: "buildCommand",
       message: "Build Command",
-      initial: packageJson.scripts.build ? "build" : "none",
+      initial: packageJson?.scripts?.build ? "build" : "none",
     },
-  ])
+  ], { onCancel: () => { throw new Error("Cancelled by user") }})
 
-  console.log({ buildCommand })
+  console.log({ buildCommand, releaseBranch })
+
+  if (!releaseRCExists) {
+    console.log("Installing dependencies...")
+    console.log(`Creating ".releaserc.js"...`)
+    await fs.writeFile(path.join(userRepoDir, ".releaserc.js"), `module.exports = {
+  branch: "master",
+  plugins: [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/npm", { npmPublish: true}],
+    "@semantic-release/github",
+    [
+      "@semantic-release/git",
+      {
+        assets: ["package.json"],
+        message:
+          "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+      },
+    ],
+    ["@semantic-release/npm", { npmPublish: true, pkgRoot: "lib" }],
+  ],
+}`)
+
+  }
 
   return {
     config: { ...config },
