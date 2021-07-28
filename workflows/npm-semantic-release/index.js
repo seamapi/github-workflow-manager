@@ -1,22 +1,36 @@
+const path = require("path")
 const prompts = require("prompts")
+const fs = require("fs/promises")
 
-async function createWorkflowInteractive({ userRepoDir }) {
-  const {} = await prompts([
+async function createWorkflowInteractive({ userRepoDir, config }) {
+  const packageJson = JSON.parse(
+    await fs.readFile(path.join(userRepoDir, "package.json"))
+  )
+
+  const releaseRCExists = Boolean(
+    await fs.stat(path.join(userRepoDir, ".releaserc.js")).catch((e) => null)
+  )
+
+  const { buildCommand } = await prompts([
     {
-      type: "",
-      name: "",
-      message: "",
+      type: "text",
+      name: "buildCommand",
+      message: "Build Command",
+      initial: packageJson.scripts.build ? "build" : "none",
     },
   ])
 
+  console.log({ buildCommand })
 
-return `name: NPM Semantic Release
+  return {
+    config: { ...config },
+    content: `name: NPM Semantic Release
 on:
   push:
     branches:
       - master
 jobs:
-  release:
+  publish:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     name: Release
     runs-on: ubuntu-20.04
@@ -29,22 +43,24 @@ jobs:
           node-version: 14
       - name: Install dependencies
         run: npm install
-      - name: Build NPM package
-        run: npm run build:lib
+${
+  buildCommand !== "none"
+    ? `      - name: Build NPM package
+        run: npm run ${buildCommand}`
+    : ""
+}
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
       - name: Publish github pages
         run: |
-          git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/UniversalDataTool/universal-data-tool.git
+          git remote set-url origin https://git:\${GITHUB_TOKEN}@github.com/UniversalDataTool/universal-data-tool.git
           npm run gh-pages -- -u "github-actions-bot <support+actions@github.com>"
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
-          REACT_APP_GOOGLE_DRIVE_APP_ID: ${{ secrets.REACT_APP_GOOGLE_DRIVE_APP_ID }}
-          REACT_APP_GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.REACT_APP_GOOGLE_DRIVE_CLIENT_ID }}
-          REACT_APP_GOOGLE_DRIVE_DEVELOPER_KEY: ${{ secrets.REACT_APP_GOOGLE_DRIVE_DEVELOPER_KEY }}`
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}`,
+  }
 }
 
 module.exports = {
