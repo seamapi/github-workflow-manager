@@ -2,6 +2,8 @@ const path = require("path")
 const prompts = require("prompts")
 const fs = require("fs/promises")
 const runShell = require("../../lib/runShell")
+const Confirm = require("prompt-confirm")
+const openGithubSecretsPage = require("../../lib/openGithubSecretsPage")
 
 async function createWorkflowInteractive({ userRepoDir, config }) {
   const packageJson = JSON.parse(
@@ -15,7 +17,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     await fs.stat(path.join(userRepoDir, "yarn.lock"))
   )
 
-  const { buildCommand, releaseBranch } = await prompts([
+  const { buildCommand, releaseBranch, publishTo } = await prompts([
     {
       type: "text",
       name: "releaseBranch",
@@ -28,6 +30,12 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
       message: "Build Command",
       initial: packageJson?.scripts?.build ? "build" : "none",
     },
+    {
+      type: "select",
+      name: "publishTo",
+      message: "Publish to...",
+      choices: [{title: "npm", value: "npm"}, {"title": "github", value: "github"}]
+    }
   ], { onCancel: () => { throw new Error("Cancelled by user") }})
 
   if (!releaseRCExists) {
@@ -56,7 +64,12 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     ],
   ],
 }`)
+  }
 
+  if (publishTo === "npm" && await new Confirm("Generate NPM token? (required to publish)").run()) {
+    const tokenOutput = await runShell("npm", ["token", "create"], { cwd: userRepoDir, returnOutput: true })
+    console.log(`\n`)
+    console.log(tokenOutput)
   }
 
   return {

@@ -76,6 +76,7 @@ async function main() {
 }
 
 if (!module.parent) {
+  process.on("SIGINT", () => process.exit(1))
   main().catch((e) => {
     console.log(chalk.red(e.toString() + "\n\n" + e.stack))
   })
