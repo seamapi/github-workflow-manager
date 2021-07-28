@@ -34,9 +34,15 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
 
   if (!releaseRCExists) {
     console.log("Installing dependencies...")
+    const deps = ["@semantic-release/commit-analyzer", "@semantic-release/release-notes-generator", "@semantic-release/npm", "@semantic-release/github", "@semantic-release/git"]
+    if (yarnLockExists) {
+      await runShell("yarn", ["add", "--dev", ...deps], { cwd: userRepoDir })
+    } else {
+      await runShell("npm", ["install", "--dev", ...deps], { cwd: userRepoDir })
+    }
     console.log(`Creating ".releaserc.js"...`)
     await fs.writeFile(path.join(userRepoDir, ".releaserc.js"), `module.exports = {
-  branch: "master",
+  branch: "${releaseBranch}",
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -47,10 +53,9 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
       {
         assets: ["package.json"],
         message:
-          "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+          "chore(release): \${nextRelease.version} [skip ci]\\n\\n\${nextRelease.notes}",
       },
     ],
-    ["@semantic-release/npm", { npmPublish: true, pkgRoot: "lib" }],
   ],
 }`)
 
