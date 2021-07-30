@@ -97,10 +97,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     await fs.writeFile(
       path.join(userRepoDir, "release.config.js"),
       `module.exports = {
-  branch: "${releaseBranch}",
-  release: {
-    branches: ["${releaseBranch}"],
-  },
+  branches: ["${releaseBranch}"],
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
