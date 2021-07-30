@@ -12,8 +12,10 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     await fs.readFile(path.join(userRepoDir, "package.json"))
   )
 
-  const releaseRCExists = Boolean(
-    await fs.stat(path.join(userRepoDir, ".releaserc.js")).catch((e) => null)
+  const releaseConfigExists = Boolean(
+    await fs
+      .stat(path.join(userRepoDir, "release.config.js"))
+      .catch((e) => null)
   )
   const yarnLockExists = Boolean(
     await fs.stat(path.join(userRepoDir, "yarn.lock"))
@@ -25,18 +27,21 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
         type: "text",
         name: "releaseBranch",
         message: "Main Release Branch:",
-        initial: "main",
+        initial: config.releaseBranch || "main",
       },
       {
         type: "text",
         name: "buildCommand",
         message: "Build Command",
-        initial: packageJSON?.scripts?.build ? "build" : "none",
+        initial:
+          config.buildCommand ||
+          (packageJSON?.scripts?.build ? "build" : "none"),
       },
       {
         type: "select",
         name: "publishTo",
         message: "Publish to...",
+        initial: config.publishTo || "npm",
         choices: [
           { title: "npm", value: "npm" },
           { title: "github", value: "github" },
@@ -75,7 +80,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     }
   }
 
-  if (!releaseRCExists) {
+  if (!releaseConfigExists) {
     console.log("Installing dependencies...")
     const deps = [
       "@semantic-release/commit-analyzer",
@@ -89,9 +94,9 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     } else {
       await runShell("npm", ["install", "--dev", ...deps], { cwd: userRepoDir })
     }
-    console.log(`Creating ".releaserc.js"...`)
+    console.log(`Creating "release.config.js"...`)
     await fs.writeFile(
-      path.join(userRepoDir, ".releaserc.js"),
+      path.join(userRepoDir, "release.config.js"),
       `module.exports = {
   branch: "${releaseBranch}",
   plugins: [
@@ -145,7 +150,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
   }
 
   return {
-    config: { ...config },
+    config: { ...config, releaseBranch, publishTo, buildCommand },
     content: `name: NPM Semantic Release
 on:
   push:
