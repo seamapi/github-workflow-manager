@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Login to container registry
-        run: docker/login-action@v1
+        uses: docker/login-action@v1
         with:
           username: \${{ secrets.REGISTRY_USERNAME }}
           password: \${{ secrets.REGISTRY_PASSWORD }}

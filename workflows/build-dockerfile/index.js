@@ -37,7 +37,7 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
 
   return {
     config: { dockerOrg, imageName, releaseBranch },
-    content: workflowTemplate({ dockerOrg, imageName }),
+    content: workflowTemplate({ dockerOrg, imageName, releaseBranch }),
   }
 }
 
