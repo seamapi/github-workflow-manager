@@ -150,7 +150,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
 on:
   push:
     branches:
-      - master
+      - ${releaseBranch}
 jobs:
   publish:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
