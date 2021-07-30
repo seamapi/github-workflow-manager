@@ -86,7 +86,6 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
       "@semantic-release/npm",
-      "@semantic-release/github",
       "@semantic-release/git",
     ]
     if (yarnLockExists) {
@@ -103,7 +102,6 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     ["@semantic-release/npm", { npmPublish: true}],
-    "@semantic-release/github",
     [
       "@semantic-release/git",
       {
