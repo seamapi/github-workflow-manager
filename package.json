@@ -2,7 +2,9 @@
   "name": "github-workflow-manager",
   "repository": "https://github.com/seveibar/github-workflow-manager",
   "version": "1.0.0",
-  "bin": "index.js",
+  "bin": {
+    "gwm": "index.js"
+  },
   "main": "index.js",
   "license": "MIT",
   "scripts": {
