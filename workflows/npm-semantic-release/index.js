@@ -8,6 +8,7 @@ const chalk = require("chalk")
 const stripColor = require("strip-color")
 const workflowTemplate = require("./workflow-template")
 const openGithubSecretsPage = require("../../lib/openGithubSecretsPage")
+const getRepoPath = require("../../lib/getRepoPath")
 
 async function createWorkflowInteractive({ userRepoDir, config }) {
   const packageJSON = JSON.parse(
@@ -59,12 +60,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
 
   if (!packageJSON.repository) {
     // Add repository to package.json
-    const repoPath = (
-      await runShell("git", ["remote", "-v"], {
-        cwd: userRepoDir,
-        log: false,
-      })
-    ).match(/git@github\.com:(.+)\.git/m)?.[1]
+    const repoPath = await getRepoPath({ userRepoPath })
     if (!repoPath) throw new Error(`Need "repository" field in package.json`)
     const fullRepoURL = `https://github.com/${repoPath}`
     if (

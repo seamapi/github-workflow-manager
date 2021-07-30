@@ -10,6 +10,7 @@ const yaml = require("yaml")
 const selectUserWorkflow = require("./lib/selectUserWorkflow")
 const findGitRoot = require("find-git-root")
 const prettier = require("prettier")
+const { create } = require("domain")
 
 const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
   (agg, dirName) => ({
@@ -42,8 +43,6 @@ async function main() {
     yargsBuilder.showHelp()
     process.exit(1)
   }
-
-  console.log({ argv })
 
   if (argv._[0] !== "install") {
     console.log(yargsBuilder.showHelp())
@@ -104,6 +103,14 @@ async function main() {
 if (!module.parent) {
   process.on("SIGINT", () => process.exit(1))
   main().catch((e) => {
-    console.log(chalk.red(e.toString() + "\n\n" + e.stack))
+    const quietErrors = ["Cancelled by user"]
+    const err = e.toString()
+    console.log(
+      chalk.red(
+        err + quietErrors.some((qErr) => err.includes(qErr))
+          ? ""
+          : "\n\n" + e.stack
+      )
+    )
   })
 }

@@ -1,4 +1,4 @@
-module.exports = ({ dockerOrg, imageName }) =>
+module.exports = ({ dockerOrg, imageName, releaseBranch }) =>
   `name: Build Dockerfile
 on:
   push:
