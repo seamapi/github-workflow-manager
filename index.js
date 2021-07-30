@@ -47,7 +47,7 @@ async function main() {
   const { selectedWorkflowName, gwmConfig } = await selectUserWorkflow({
     userRepoDir,
     workflowType,
-    workflowDef: workflows[workflowType]
+    workflowDef: workflows[workflowType],
   })
 
   const createdWorkflow = await workflows[

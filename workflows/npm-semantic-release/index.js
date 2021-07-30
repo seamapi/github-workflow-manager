@@ -55,17 +55,20 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
     const repoPath = (
       await runShell("git", ["remote", "-v"], {
         cwd: userRepoDir,
+        log: false,
       })
     ).match(/git@github\.com:(.+)\.git/m)?.[1]
     if (!repoPath) throw new Error(`Need "repository" field in package.json`)
     const fullRepoURL = `https://github.com/${repoPath}`
     if (
-      new Confirm(`Add '"repository": "${fullRepoURL}"' to package.json?`).run()
+      await new Confirm(
+        `Add '"repository": "${fullRepoURL}"' to package.json?`
+      ).run()
     ) {
       packageJSON.repository = fullRepoURL
       await fs.writeFile(
         path.join(userRepoDir, "package.json"),
-        JSON.stringify(packageJSON)
+        JSON.stringify(packageJSON, null, "  ")
       )
     } else {
       throw new Error(`Need "repository" field in package.json`)
@@ -115,6 +118,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
   ) {
     const tokenOutput = await runShell("npm", ["token", "create"], {
       cwd: userRepoDir,
+      log: true,
     })
     const tokenMatchRes = stripColor(tokenOutput).match(
       /token[\s│\|]+([a-fA-F0-9\-]+)/m
@@ -136,7 +140,7 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
         "Would you like to open the github secrets page?"
       ).run())
     ) {
-      openGithubSecretsPage()
+      await openGithubSecretsPage({ userRepoDir })
     }
   }
 
