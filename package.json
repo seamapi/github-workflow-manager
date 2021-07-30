@@ -6,7 +6,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "node index.js"
+    "test": "node index.js --help"
   },
   "dependencies": {
     "@semantic-release/commit-analyzer": "^8.0.1",
