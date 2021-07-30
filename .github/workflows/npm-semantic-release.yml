@@ -4,7 +4,7 @@ name: NPM Semantic Release
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   publish:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
