@@ -73,6 +73,14 @@ async function main() {
         : yaml.stringify(createdWorkflow.content)
     }`
   )
+
+  console.log(
+    `\n\n${chalk.green(
+      "Success!"
+    )}\n\n${workflowType} usage: \n=====================================================\n\n${
+      workflows[workflowType].usage
+    }\n\n`
+  )
 }
 
 if (!module.parent) {

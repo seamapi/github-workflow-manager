@@ -1,5 +1,6 @@
 const path = require("path")
 const prompts = require("prompts")
+const deindent = require("deindent")
 const fs = require("fs/promises")
 const runShell = require("../../lib/runShell")
 const Confirm = require("prompt-confirm")
@@ -41,13 +42,13 @@ async function createWorkflowInteractive({ userRepoDir, config }) {
         type: "select",
         name: "publishTo",
         message: "Publish to...",
-        initial: config.publishTo || "npm",
+        // initial: config.publishTo || "npm",
         choices: [
           { title: "npm", value: "npm" },
           { title: "github", value: "github" },
         ],
       },
-    ].filter(Boolean),
+    ],
     {
       onCancel: () => {
         throw new Error("Cancelled by user")
@@ -185,4 +186,18 @@ module.exports = {
   createWorkflowInteractive,
   description:
     "Build and publish new npm versions, using commits to increment version numbers.",
+  usage: `
+    
+Every time you make a commit, add one of the following tags before it:
+
+type             | version | commit message
+-----------------|---------|-----------------------------------
+patch release    |  _._.x  | "fix: <some message>"
+feature release  |  _.x.0  | "feat: <some message>"
+breaking release |  x.0.0  | "BREAKING CHANGE: <some message>"
+
+When merged to master, these commits will be analyzed and new versions of
+your package will be published.
+
+    `.trim(),
 }
