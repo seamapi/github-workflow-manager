@@ -22,13 +22,19 @@ const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
 async function main() {
   const yargsBuilder = yargs(hideBin(process.argv))
 
-  for (const wfName in workflows) {
-    if (!workflows[wfName].description)
-      throw new Error(
-        `Workflow Template "${wfName}" is missing the "description" export.`
-      )
-    yargsBuilder.command(wfName, workflows[wfName].description)
-  }
+  const installCommand = yargsBuilder.command(
+    "install",
+    "Install a github workflow",
+    (installBuilder) => {
+      for (const wfName in workflows) {
+        if (!workflows[wfName].description)
+          throw new Error(
+            `Workflow Template "${wfName}" is missing the "description" export.`
+          )
+        installBuilder.command(wfName, workflows[wfName].description)
+      }
+    }
+  )
 
   const argv = yargsBuilder.argv
 
@@ -37,7 +43,14 @@ async function main() {
     process.exit(1)
   }
 
-  const workflowType = argv._[0]
+  console.log({ argv })
+
+  if (argv._[0] !== "install") {
+    console.log(yargsBuilder.showHelp())
+    process.exit(1)
+  }
+
+  const workflowType = argv._[1]
 
   if (!workflows[workflowType]) {
     yargsBuilder.showHelp()
@@ -80,9 +93,9 @@ async function main() {
   )
 
   console.log(
-    `\n\n${chalk.green(
+    `\n${chalk.green(
       "Success!"
-    )}\n\n${workflowType} usage: \n=====================================================\n\n${
+    )}\n\n=====================================================\n\n${workflowType} usage:\n\n${
       workflows[workflowType].usage
     }\n\n`
   )
