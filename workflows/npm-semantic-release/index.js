@@ -200,6 +200,10 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
             choices: [
               { title: "Create a repository secret", value: "repo_secret" },
               { title: "Create an organization secret", value: "org_secret" },
+              {
+                title: "Organization/Repository secret already exists",
+                value: "already_exists",
+              },
             ],
           },
         ])
@@ -214,6 +218,7 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
           if (await confirm("Open repository secrets page in browser?")) {
             openGithubSecretsPage({ userRepoDir })
           }
+          await confirm("Repository secret added?")
         } else if (newSecretType === "org_secret") {
           if (await confirm("Open organization secrets page in browser?")) {
             open(
@@ -222,8 +227,8 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
               }/settings/secrets/actions/new`
             )
           }
+          await confirm("Organization secret added?")
         }
-        await confirm("Secret added?")
       }
     }
   }
