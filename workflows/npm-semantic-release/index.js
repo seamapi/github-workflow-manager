@@ -25,38 +25,47 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
     await fs.stat(path.join(userRepoDir, "yarn.lock"))
   )
 
-  const { buildCommand, releaseBranch, publishTo } = await prompts(
-    [
+  const { buildCommand, releaseBranch, publishTo, testBeforePublish } =
+    await prompts(
+      [
+        {
+          type: "text",
+          name: "releaseBranch",
+          message: "Main Release Branch:",
+          initial: config.releaseBranch || "main",
+        },
+        {
+          type: "text",
+          name: "buildCommand",
+          message: "Build Command",
+          initial:
+            config.buildCommand ||
+            (packageJSON?.scripts?.build ? "build" : "none"),
+        },
+        {
+          type: "toggle",
+          name: "testBeforePublish",
+          message: "Test before publishing?",
+          initial: packageJSON?.scripts?.test,
+          active: "yes",
+          inactive: "no",
+        },
+        {
+          type: "select",
+          name: "publishTo",
+          message: "Publish to...",
+          choices: [
+            { title: "npm", value: "npm" },
+            { title: "github", value: "github" },
+          ],
+        },
+      ],
       {
-        type: "text",
-        name: "releaseBranch",
-        message: "Main Release Branch:",
-        initial: config.releaseBranch || "main",
-      },
-      {
-        type: "text",
-        name: "buildCommand",
-        message: "Build Command",
-        initial:
-          config.buildCommand ||
-          (packageJSON?.scripts?.build ? "build" : "none"),
-      },
-      {
-        type: "select",
-        name: "publishTo",
-        message: "Publish to...",
-        choices: [
-          { title: "npm", value: "npm" },
-          { title: "github", value: "github" },
-        ],
-      },
-    ],
-    {
-      onCancel: () => {
-        throw new Error("Cancelled by user")
-      },
-    }
-  )
+        onCancel: () => {
+          throw new Error("Cancelled by user")
+        },
+      }
+    )
 
   const repoPath = await getRepoPath({ userRepoDir })
 
@@ -237,6 +246,7 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
     content: workflowTemplate({
       releaseBranch,
       buildCommand,
+      testBeforePublish,
       registryType: publishTo,
       usePersonalAccessToken,
       personalAccessTokenName,

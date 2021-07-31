@@ -3,7 +3,6 @@
 const yargs = require("yargs/yargs")
 const { hideBin } = require("yargs/helpers")
 const chalk = require("chalk")
-const { readdirSync } = require("fs")
 const fs = require("fs/promises")
 const path = require("path")
 const yaml = require("yaml")
@@ -12,15 +11,8 @@ const findGitRoot = require("find-git-root")
 const prettier = require("prettier")
 const { create } = require("domain")
 const mkdirp = require("mkdirp")
-const getWorkflows = require("./lib/getWorkflows")
-
-const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
-  (agg, dirName) => ({
-    ...agg,
-    [dirName]: require(path.resolve(__dirname, "workflows", dirName)),
-  }),
-  {}
-)
+const getUserWorkflows = require("./lib/getUserWorkflows")
+const workflows = require("./lib/workflows")
 
 async function main() {
   const yargsBuilder = yargs(hideBin(process.argv))
@@ -51,7 +43,7 @@ async function main() {
   }
 
   if (argv._[0] === "ls") {
-    const workflows = await getWorkflows({ userRepoDir })
+    const workflows = await getUserWorkflows({ userRepoDir })
     for (const wf of workflows) {
       console.log(`${wf.fileName} ${chalk.grey(wf.gwmConfig.type)}`)
     }

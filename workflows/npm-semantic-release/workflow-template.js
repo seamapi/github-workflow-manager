@@ -2,6 +2,7 @@ module.exports = ({
   releaseBranch,
   buildCommand,
   registryType = "npm",
+  testBeforePublish,
   usePersonalAccessToken = false,
   personalAccessTokenName,
 }) => {
@@ -39,9 +40,14 @@ jobs:
         run: npm install${
           buildCommand !== "none"
             ? `\n      - name: Build NPM package
-        run: npm run ${buildCommand}`
+        run: npm run ${buildCommand}\n`
             : ""
-        }
+        }${
+    testBeforePublish
+      ? `\n      - name: Test
+        run: npm run test`
+      : ""
+  }
       - name: Release
         env:
           NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN}
