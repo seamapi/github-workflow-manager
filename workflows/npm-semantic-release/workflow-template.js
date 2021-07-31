@@ -1,5 +1,17 @@
-module.exports = ({ releaseBranch, buildCommand }) =>
-  `name: NPM Semantic Release
+module.exports = ({
+  releaseBranch,
+  buildCommand,
+  registryType = "npm",
+  usePersonalAccessToken = false,
+  personalAccessTokenName,
+}) => {
+  const NODE_AUTH_TOKEN =
+    registryType === "github"
+      ? usePersonalAccessToken
+        ? `\${{ secrets.${personalAccessTokenName} }}`
+        : "${{ secrets.GITHUB_TOKEN }}"
+      : "${{ secrets.NPM_TOKEN }}"
+  return `name: NPM Semantic Release
 on:
   push:
     branches:
@@ -13,10 +25,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: '14.x'
+          registry-url: '${
+            registryType === "github"
+              ? "https://npm.pkg.github.com"
+              : "https://registry.npmjs.org"
+          }'
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN}
         run: npm install${
           buildCommand !== "none"
             ? `\n      - name: Build NPM package
@@ -25,6 +44,6 @@ jobs:
         }
       - name: Release
         env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN}
         run: npx semantic-release`
+}

@@ -11,6 +11,7 @@ const selectUserWorkflow = require("./lib/selectUserWorkflow")
 const findGitRoot = require("find-git-root")
 const prettier = require("prettier")
 const { create } = require("domain")
+const mkdirp = require("mkdirp")
 
 const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
   (agg, dirName) => ({
@@ -58,6 +59,12 @@ async function main() {
 
   const userRepoDir = path.resolve(findGitRoot(process.cwd()), "..")
 
+  const workflowsDir = path.join(userRepoDir, ".github", "workflows")
+  if (!(await fs.stat(workflowsDir).catch((e) => null))) {
+    console.log(`Creating directory "${workflowsDir}"`)
+    await mkdirp(workflowsDir)
+  }
+
   const { selectedWorkflowName, gwmConfig } = await selectUserWorkflow({
     userRepoDir,
     workflowType,
@@ -101,16 +108,16 @@ async function main() {
 }
 
 if (!module.parent) {
-  process.on("SIGINT", () => process.exit(1))
   main().catch((e) => {
     const quietErrors = ["Cancelled by user"]
     const err = e.toString()
     console.log(
       chalk.red(
-        err + quietErrors.some((qErr) => err.includes(qErr))
-          ? ""
-          : "\n\n" + e.stack
-      )
+        err +
+          (quietErrors.some((qErr) => err.includes(qErr))
+            ? ""
+            : "\n\n" + e.stack)
+      ) + "\n"
     )
   })
 }
