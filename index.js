@@ -12,6 +12,7 @@ const findGitRoot = require("find-git-root")
 const prettier = require("prettier")
 const { create } = require("domain")
 const mkdirp = require("mkdirp")
+const getWorkflows = require("./lib/getWorkflows")
 
 const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
   (agg, dirName) => ({
@@ -24,6 +25,8 @@ const workflows = readdirSync(path.resolve(__dirname, "workflows")).reduce(
 async function main() {
   const yargsBuilder = yargs(hideBin(process.argv))
 
+  yargsBuilder.command("ls", "List installed workflows")
+  yargsBuilder.command("edit", "Edit an existing workflow")
   const installCommand = yargsBuilder.command(
     "install",
     "Install a github workflow",
@@ -40,24 +43,29 @@ async function main() {
 
   const argv = yargsBuilder.argv
 
+  const userRepoDir = path.resolve(findGitRoot(process.cwd()), "..")
+
   if (argv._.length === 0) {
     yargsBuilder.showHelp()
     process.exit(1)
   }
 
-  if (argv._[0] !== "install") {
-    console.log(yargsBuilder.showHelp())
-    process.exit(1)
+  if (argv._[0] === "ls") {
+    const workflows = await getWorkflows({ userRepoDir })
+    for (const wf of workflows) {
+      console.log(`${wf.fileName} ${chalk.grey(wf.gwmConfig.type)}`)
+    }
+    process.exit(0)
   }
 
-  const workflowType = argv._[1]
-
-  if (!workflows[workflowType]) {
-    yargsBuilder.showHelp()
-    process.exit(1)
+  let workflowType
+  if (argv._[0] === "install") {
+    workflowType = argv._[1]
+    if (!workflows[workflowType]) {
+      yargsBuilder.showHelp()
+      process.exit(1)
+    }
   }
-
-  const userRepoDir = path.resolve(findGitRoot(process.cwd()), "..")
 
   const workflowsDir = path.join(userRepoDir, ".github", "workflows")
   if (!(await fs.stat(workflowsDir).catch((e) => null))) {
@@ -70,6 +78,7 @@ async function main() {
     workflowType,
     workflowDef: workflows[workflowType],
   })
+  workflowType = gwmConfig.type
 
   const createdWorkflow = await workflows[
     workflowType

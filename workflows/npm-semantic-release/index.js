@@ -45,7 +45,6 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
         type: "select",
         name: "publishTo",
         message: "Publish to...",
-        // initial: config.publishTo || "npm",
         choices: [
           { title: "npm", value: "npm" },
           { title: "github", value: "github" },
