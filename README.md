@@ -1,5 +1,7 @@
 # Github Workflow Manager
 
+![demo_usage_gif](https://github.com/seveibar/github-workflow-manager/blob/main/demo.gif)
+
 > This is not an official Github project.
 
 Easily install Github workflows for common patterns such as
