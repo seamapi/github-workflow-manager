@@ -14,7 +14,7 @@ const mkdirp = require("mkdirp")
 const getUserWorkflows = require("./lib/getUserWorkflows")
 const workflows = require("./lib/workflows")
 
-async function main() {
+function getYargsBuilder() {
   const yargsBuilder = yargs(hideBin(process.argv))
 
   yargsBuilder.command("ls", "List installed workflows")
@@ -32,7 +32,11 @@ async function main() {
       }
     }
   )
+  return yargsBuilder
+}
 
+async function main() {
+  const yargsBuilder = getYargsBuilder()
   const argv = yargsBuilder.argv
 
   const userRepoDir = path.resolve(findGitRoot(process.cwd()), "..")
@@ -122,3 +126,5 @@ if (!module.parent) {
     )
   })
 }
+
+module.exports = { getYargsBuilder, main }
