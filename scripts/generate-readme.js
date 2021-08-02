@@ -23,7 +23,7 @@ async function generateReadme() {
     readmeContent,
     "HELP_OUTPUT",
     `\`\`\`bash\n${(await yargsBuilder.getHelp()).replace(
-      "generate-readme.js",
+      /generate-readme\.js/g,
       "gwm"
     )}\n\`\`\``
   )
