@@ -2,8 +2,9 @@
 
 > This is not an official Github project.
 
-Workflow managment as a package manager. Install github workflows into
-git repositories with one command.
+Easily install Github workflows for common patterns such as
+publishing an npm module on pushes to master or pushing
+a Dockerfile.
 
 ## Installation
 
