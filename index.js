@@ -74,7 +74,7 @@ async function main() {
     workflowType,
     workflowDef: workflows[workflowType],
   })
-  workflowType = gwmConfig.type
+  workflowType = gwmConfig?.type || workflowType
 
   const createdWorkflow = await workflows[
     workflowType
