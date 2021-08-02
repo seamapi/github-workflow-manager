@@ -11,7 +11,7 @@ git repositories with one command.
 
 Or to execute without installation:
 
-`npx github-workflow-manager install ...`
+`npx github-workflow-manager install <some workflow>`
 
 ## Usage
 
