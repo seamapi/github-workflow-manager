@@ -1,7 +1,7 @@
 {
   "name": "github-workflow-manager",
   "repository": "https://github.com/seveibar/github-workflow-manager",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "bin": {
     "gwm": "index.js",
     "github-workflow-manager": "index.js"
