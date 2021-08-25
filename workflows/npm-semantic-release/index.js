@@ -190,7 +190,9 @@ async function createWorkflowInteractive({ userRepoDir, config = {} }) {
         if (
           await confirm("Open personal access token creation page in browser?")
         ) {
-	  console.log(chalk.grey("Opening https://github.com/settings/tokens/new"))
+          console.log(
+            chalk.grey("Opening https://github.com/settings/tokens/new")
+          )
           open("https://github.com/settings/tokens/new")
         }
 
